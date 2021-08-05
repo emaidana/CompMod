@@ -1,0 +1,306 @@
+---
+title: "Computational Modeling - Assignment 4"
+author: "Esteban David Maidana"
+date: "05/08/2021"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assignment 4 - Alternative exercise
+
+In this alternative assignment 5, you have an experimentally collected dataset and a hypothesis to test. You have to produce i) a R markdown script detailing the data preprocessing (looking at the data, making sure that there are no weird values, dealing with weird values if there are, etc.) and the data analysis process (model building including prior testing, model fitting, quality check) and ii) a text document with the answer to the questions in the document below. N.B. the analysis has to employ a Bayesian framework.
+
+### Background
+
+A key question to understand human cognition is how much is our cognition permeated by social information at both implicit and explicit levels. An interesting approach to the implicit use of information is the “imitation inhibition task" (read the following for details on the set-up: Simonsen et al (2018) Enhanced Automatic Action Imitation and Intact Imitation-Inhibition in Schizophrenia, Schizophrenia Bulletin, https://doi.org/10.1093/schbul/sby006)
+
+We therefore tried to replicate the basic experiment on CogSci students: participants have to move their index finger when “1” appears on the screen, and their middle finger when “2” appears on the screen. Meanwhile, on the background of the screen two fingers might either move congruently (the same finger as the instructions dictate moves) or incongruently (the opposite finger moves).
+The hypothesis is that the background “social” information will influence the performance of the participants, even when explicitly irrelevant to solve the task, thus supporting the idea that humans continuously and implicitly use social information.
+
+The dataset (here: https://www.dropbox.com/s/1ehgvlcvtsf5q46/ImiInhiData.csv?dl=0 ) contains 8 variables:
+
+1.	Trial: a number from 0 to 119, indicating the trial
+2.	Congruity: indicating condition (background fingers moving congruently or not
+3.	Reaction_time: indicating reaction time in milliseconds
+4.	Response: indicating which finger was raised. “lcmd” indicates the index, “lalt” indicates the middle finger
+5.	Correctness: indicating whether the response was the correct one (following the instructions) or not
+6.	Order_number: indicating what the instructions said
+7.	Finger_Screen: indicating which finger moved on the screen
+8.	ID: indicating participant ID
+
+
+## Congruity = 'Yes' when Order_Number = Finger_Screen
+## Correctness = 1 ('Yes') when Order_Number = Response
+
+```{r}
+## Required packages
+## install.packages("bayesplot") ##Installed
+## install.packages("rstan") ##Installed
+## install.packages("shinystan") ##Installed
+## install.packages("rstanarm") ##Installed
+
+## Required libraries
+library(tidyverse) ## Loaded
+library(rstan) ## Loaded
+library(bayesplot) ## Loaded
+library(shinystan) ## Loaded
+
+### LOAD DATA
+## Get working directory
+setwd('/Users/estebandavidmaidana/Desktop') 
+working_directory = getwd()
+
+## Load data from csv file 
+d <- read_delim(file.choose(),delim=";")
+names(d)
+View(d)
+glimpse(d)
+```
+Answer the following questions:
+
+1.	Did you find any issue in the data? Which? How did you deal with them?
+
+```{r}
+## First looking at the data
+nrow(d);nrow(drop_na(d)) ## There are no NAN's in our data
+
+## Transforming the responses so that their names match the other columns
+d$Response[d$Response == 'lcmd'] = 'Index'
+d$Response[d$Response == 'lalt'] = 'Middle'
+
+## glimpse(d)
+## Checking participant id's 
+## unique(d$Participant)
+
+## Need to transform response, congruity, order number, and finger screen into factors
+d[,c("Response","Congruity","Order_number","Finger_Screen")] = 
+  lapply(d[,c("Response","Congruity","Order_number","Finger_Screen")], factor)
+
+## d = d %>% mutate(
+##   Response = as.factor(Response),
+##   Participant = as.factor(Participant),
+##   Congruity = as.factor(Congruity),
+##   Order_number = as.factor(Order_number),
+##   Finger_screen = as.factor(Finger_Screen)
+## )
+
+## First checking the length of the participant entries to determine if they performed the full 120 trials
+tapply(d$Correctness, d$Participant, length) ## Some participants only performed a few trials, and some performed far more than 120 trials. We should drop participants who performed fewer than 120 trials, and take a closer look at those who had more than 240 trials
+
+## Oli, Lvt, CT, SIM, Stine, MW, Sv all had more than 120 trials
+
+d$Participant = as.character(d$Participant)
+
+view(d[d$Participant == 'lvt',]) ## This participant had their trials duplicated with meaningless 0 and 1's under correctness
+
+d[d$Participant == 'oli',]
+d[d$Participant == 'CT',]
+
+## From a sub-selection of those with over 120 trials, the duplication problem exists for all of them
+
+## Simple solution: drop them
+## More elegant solution: take only unique trial number values then re-validate the correctness column 
+## I have decided to proceed to drop them
+parlen = (tapply(d$Correctness, d$Participant,length)==120)
+  
+good.participants = c(names(parlen[parlen==TRUE]))
+good.participants
+
+d2 = d[d$Participant %in% good.participants,]
+
+## Now we have a new dataset with just the good participants, d2 
+## Let's check for mean outliers, and then we're good to move on
+tapply(d2$Correctness, d2$Participant, mean)
+
+## Some have low means, let's check those with means below .5
+meantest = (tapply(d2$Correctness, d2$Participant, mean)<.5)
+names(meantest[meantest == TRUE])
+
+## Viktoria, 908, 98, 8021126, hhw and M_02 stand out
+tapply(d2$Correctness, d2$Participant, mean)[meantest == TRUE]
+
+## All have means below 10%, perhaps correctness was inverted for them? Let's check
+d2[d2$Participant %in% c(names(meantest[meantest == TRUE])),]
+
+## For now going to drop these, more elegant soln would be to see if we can compensate for the error 
+parmean = (tapply(d2$Correctness, d2$Participant, mean)>.5)
+good.means = c(names(parmean[parmean==TRUE]))
+
+d3 = d2[d2$Participant %in% good.means,]
+```
+
+2.	How did you go about testing your hypothesis? Describe and motivate the *Bayesian* statistical procedure(s) you used:
+    - model(s) (e.g. outcome likelihood, predictors, etc.) and priors
+```{r}
+## Congruent set
+congruent.ds = d3[d3$Congruity == 'Yes',]
+
+## Incongruent set
+incongruent.ds = d3[d3$Congruity == 'No',]
+```
+
+```{r}
+## Our prior is simply a normal distribution centered around a mean of .95 with a standard deviation of .1 
+hist(rnorm(6000, mean =.95, sd=.1))
+
+## Generated data from our prior does seem to reasonably cover the range we would expect, however there is an argument for reducing the standard deviation a little as a substantial portion of our range is above 1.0. If we make the standard deviation 0.04 instead:
+hist(rnorm(6000, mean =.95, sd=.04)) ## This seems more reasonable as a substantial probability density is concentrated in the region between .9 and 1.0 (90 and 100% correct answers)
+```
+
+```{r}
+### Congruent Model
+N = 1560
+y <- c(congruent.ds$Correctness)
+
+## This is the format for a Bayesian model in stan, it can also be written as a text file
+congruency_model_1 <-
+  '
+  data {
+  int<lower = 0> N;
+  int<lower = 0, upper = 1> y[N];
+  }
+  parameters {
+  real<lower = 0, upper =1> theta;
+  }
+  model {
+  theta ~ normal(.95,.04); //prior
+  y ~ bernoulli(theta); //likelihood
+  }
+  '
+model_congruent = stan_model(model_code = congruency_model_1)
+
+## First trying with only one chain to get better warnings 
+testfit = sampling(model_congruent, data = list(N=N, y=y), chains = 1) ## No warnings!
+
+congruent_fit = sampling(model_congruent, data = list(N=N, y=y), chains = 4)
+
+## Checking our model further, let's extract our parameters and fit a histogram
+con.params = extract(congruent_fit)
+hist(con.params$theta)
+
+## This is our posterior, alternatively showing as a simple density plot
+ggplot(as.data.frame(con.params),aes(x=theta))+
+  geom_density()
+
+## We ignored the second row here, and the first row shows that there is 97% correctness rate when congruency = 'Yes'. Note that 'rhat' is less than 1.01, this generally signifies convergence of our Markov Chains (and is a good thing).
+print(congruent_fit)
+
+## A more detailed output
+summary(congruent_fit)
+
+## Finally, we can use shinystan, which is very useful for this type of visualization
+launch_shinystan(congruent_fit)
+```
+
+```{r}
+### Incongruent Model
+N = 1560
+y <- c(incongruent.ds$Correctness)
+
+## This is the format for a Bayesian model in stan, it can also be written as a text file
+incongruency_model_1 <-
+  '
+  data {
+  int<lower = 0> N;
+  int<lower = 0, upper = 1> y[N];
+  }
+  parameters {
+  real<lower = 0, upper =1> theta;
+  }
+  model {
+  theta ~ normal(.95,.04); //prior
+  y ~ bernoulli(theta); //likelihood
+  }
+  '
+model_incong = stan_model(model_code = incongruency_model_1)
+
+incong_fit = sampling(model_incong, data = list(N=N, y=y), chains = 4)
+
+## We ignored the second row here, and the first row shows that there is 97% correctness among those shown 
+incong_fit ## This fit a lower mean, .95 instead of .97 from before. Note the tightness of our probability distribution (similar values in the quartiles, very low standard deviation). Because the sd is so low for both of our probabilities, it's safe to say this supports the hypothesis.
+
+#Here we obtain the parameters 
+incong.params = extract(incong_fit)
+
+summary(incong_fit)
+```
+    
+    - quality check for the models (before and after fitting the data)
+    
+Posterior predictive checks are shown below, and an Rhat of < 1.01 for each model (from summary(model)) suggests that our Markov Chain Monte Carlos converged successfully.
+
+```{r}
+## First the posterior predictive check for the incongruent model
+# pp_data <- posterior_predict(incong_fit, nsamples = 100)
+# 
+# color_scheme_set("gray" )
+# pdense2 <- ppc_dens_overlay(y = incong.params$theta,
+#                            yrep = pp_data) +
+#   labs(x = "Probability", title = "Posterior PC") +
+#   theme(title = element_text(size=10))
+# 
+# ## Now the posterior predictive check for the congruent model
+# pp_data <- posterior_predict(congruent_fit, nsamples = 100)
+# 
+# color_scheme_set("gray" )
+# pdense2 <- ppc_dens_overlay(y = con.params$theta,
+#                            yrep = pp_data) +
+#   labs(x = "Probability", title = "Posterior PC") +
+#   theme(title = element_text(size=10))
+```
+
+    - hypothesis testing procedure (Note there is no one procedure that is better than others, so just choose what you think is more appropriate e.g. model comparison? credibility intervals? predictive error? etc.).
+    
+Note that credibility intervals are the Bayesian equivalent to confidence intervals, and as shown below there is no overlap between the 95% credibility intervals of our two models.
+
+```{r}
+summary(congruent_fit) ## 95% credible interval for our congruent fit is [0.966, 0.981] with a mean of .974
+
+summary(incong_fit) ## 95% credible interval for our incongruent fit is [0.937,0.958] with a mean of .948
+```
+
+3.	Does the data support or weakens our hypothesis? Comment and add at least a plot to visualize your results.
+
+```{r}
+## Here we are coding up a plot that will contain the posteriors for both the congruent and incongruent models, along with the prior we chose
+dat <- data.frame(dens = c(rnorm(4000,.95,.04), con.params$theta, incong.params$theta)
+                   , lines = rep(c("Prior", "Congruent Posterior","Incongruent Posterior"), each = 4000))
+## Plot
+ggplot(dat, aes(x = dens, fill = lines)) + geom_density(alpha = 0.5)+
+  labs(fill = '', x = 'Probability of correct answer')
+```
+
+
+4.	Comment on whether all participants show the same patterns (aka discuss the random effects). Use a plot to visualize the effects by participant and refer to it in your answer.
+
+```{r}
+## Really basic visualization, we can make something prettier. But this does show that there is some variance between participants.
+
+## barplot(tapply(d3$Correctness, d3$Participant, mean))
+
+## Note that there are some random effects present, different participants responded to congruent/incongruent images in different ways, however there is a good spread to our random effects meaing they should not negatively impact our model
+conag = aggregate(congruent.ds$Correctness,list(congruent.ds$Participant),mean)
+incag = aggregate(incongruent.ds$Correctness,list(incongruent.ds$Participant),mean)
+
+randomeffect = cbind(conag,incag[2])
+names(randomeffect)[1] <- "Participant"
+names(randomeffect)[2] <- "Congruent"
+names(randomeffect)[3] <- "Incongruent"
+
+ggplot(randomeffect, aes(x = Congruent, y = Incongruent, color = Participant))+
+  geom_point()
+  labs(title = 'Impact of congruency on proportion correct')
+```
+
+5.	Discuss strength and shortcomings of the analysis.
+
+It's Bayesian, so it's a little subjective. Our results would suggest that congruency led to a greater increase in correct answers than incongruency leading to incorrect answers. However, this is due to the choice of our prior, if I had selected a prior with a higher mean it would have made the effect of incongruency seem greater than congruency. That being said, in detetermining whether or not there is an effect, this approach was very successful. 
+
+
+
+
