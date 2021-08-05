@@ -10,18 +10,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 pacman::p_load(tidyverse, brms)
 
-##Required libraries
-library(magrittr) ##Loaded
-library(dplyr) ##Loaded
-library(tidyverse) ##Loaded
-library(brms) ##Loaded
+## Required libraries
+library(magrittr) ## Loaded
+library(dplyr) ## Loaded
+library(tidyverse) ## Loaded
+library(brms) ## Loaded
 
-##LOAD DATA
-##Get working directory
+## LOAD DATA
+## Get working directory
 setwd('/Users/estebandavidmaidana/Desktop')
 working_directory = getwd()
 
-##Load data from csv file
+## Load data from csv file
 file = paste(working_directory, sep = "", "/working_directory/Ass3.csv")
 dataset <- read.csv(file)
 ```
@@ -51,32 +51,33 @@ Q1.1) Does schizophrenia involved altercentric intrusion? Define model and prior
 ```{r}
 pacman::p_load(tidyverse, brms)
 
-library(magrittr)
-library(dplyr)
-library(tidyverse)
-library(brms)
+## Required libraries 
+library(magrittr) ## Loaded
+library(dplyr) ## Loaded
+library(tidyverse) ## Loaded
+library(brms) ## Loaded
 
-##LOAD DATA
-##Get working directory
+## LOAD DATA
+## Get working directory
 setwd('/Users/estebandavidmaidana/Desktop')
 working_directory = getwd()
 
-##Load data from csv file
+## Load data from csv file
 file = paste(working_directory, sep = "", "/working_directory/Ass3.csv")
 dataset <- read.csv(file)
 
-##Labeling of diagnosis
+## Labeling of diagnosis
 dataset$Diagnosis <- plyr::revalue(as.character(dataset$Diagnosis), 
                              c("0"="Controls", "1"="Schizophrenia"))
 
-##Convert two columns of the dataset into categorical data  
+## Convert two columns of the dataset into categorical data  
 dataset <- dataset %>%
   mutate(
     ID = as.factor(ID),
     Diagnosis = as.factor(Diagnosis)
   )
 
-##Define the formula
+## Define the formula
 AltercentricDiagnosis_f0 <- bf(
   AltercentricIntrusion ~ 1 + Diagnosis
 )
@@ -85,7 +86,7 @@ AltercentricDiagnosis_f <- bf(
   AltercentricIntrusion ~ 0 + Diagnosis
 )
 
-##Design the priors
+## Design the priors
 get_prior(AltercentricDiagnosis_f0, family = gaussian, dataset)
 get_prior(AltercentricDiagnosis_f, family = gaussian, dataset)
 
@@ -94,7 +95,7 @@ priorDiagnosis <- c(
   prior(normal(1, 2), class = sigma)
 ) 
 
-##Test the priors
+## Test the priors
 AltercentricDiagnosis_PriorCheck_m <- brm(
   formula = AltercentricDiagnosis_f,
   data = dataset,
@@ -103,10 +104,10 @@ AltercentricDiagnosis_PriorCheck_m <- brm(
   sample_prior = "only"
 )
 
-##Posterior predictive check
+## Posterior predictive check
 pp_check(AltercentricDiagnosis_PriorCheck_m, nsamples = 100)
 
-##Fitting the model
+## Fitting the model
 AltercentricDiagnosis_m <- brm(
   formula = AltercentricDiagnosis_f,
   data = dataset,
@@ -115,28 +116,28 @@ AltercentricDiagnosis_m <- brm(
   sample_prior = T
 )
 
-##Posterior predictive check
+## Posterior predictive check
 pp_check(AltercentricDiagnosis_m, nsamples = 100)
 
-##Check the model for warnings
+## Check the model for warnings
 AltercentricDiagnosis_m
 
 ## con un 95 de confianza mi valor tiene que caer entre 3.74 y 3.98 en los control al parecer 
 ## su altercentric en los contralodados tiene que ser 3.86
 ## y en los que tiene zchi es 4.22 cae entre los low cI y uci 
 ## definimos priors y definimos formula y fitteamos el modelo una vez que tenemos todo definido (prior y formula) 
-##@ hacemos esto y el modelo tyira los resultados
-## theres no overlapin in the 95% ci area among the two disgtribution or between disttibution which lead to conclude that altrinsenic intrusion indeicador de schi 
+## hacemos esto y el modelo tyira los resultados
+## There's no overlaping in the 95% ci area among the two distribution or between distribution which lead to conclude that altrinsenic intrusion indicador de schizophrenia  
 
-##Hypothesis testing + updating check
+## Hypothesis testing + updating check
 plot(hypothesis(AltercentricDiagnosis_m,
            "DiagnosisSchizophrenia > DiagnosisControls"))
 
 hypothesis(AltercentricDiagnosis_m,
            "DiagnosisSchizophrenia > DiagnosisControls")
 
-##de acuerdo a los resultados 
-## hnull las dos distribution faiul in the same interval, la hn se rechaza dado que dthe values fall outside of the 90%-CI for one-sided and 95%-CI for two-sided hypotheses
+## De acuerdo a los resultados 
+## Hnull las dos distributions fail in the same interval, la hn se rechaza dado que dthe values fall outside of the 90%-CI for one-sided and 95%-CI for two-sided hypotheses
 
 conditional_effects(AltercentricDiagnosis_m)
 
@@ -157,17 +158,17 @@ Q1.2) Is altercentric intrusion related to specific symptoms *in the patients*? 
 
 ```{r}
 pacman::p_load(tidyverse, brms)
-##LOAD DATA
-##Get working directory
+## LOAD DATA
+## Get working directory
 setwd('/Users/estebandavidmaidana/Desktop')
-#working_directory = getwd()
+working_directory = getwd()
 
-##Load data from csv file
+## Load data from csv file
 file = paste(working_directory, sep = "", "/working_directory/Ass3.csv")
 d <- read.csv(file)
 d <- read.csv('/Users/estebandavidmaidana/Desktop/working_directory/Ass3.csv')
 
-##Scale and center the values of the symptoms 
+## Scale and center the values of the symptoms 
 d <- d %>%
   mutate(
     AltercentricIntrusion = scale(AltercentricIntrusion),
@@ -176,15 +177,15 @@ d <- d %>%
     Apathy = scale(Apathy)
   )
 
-##Get the data of patients with schizophrenia 
+## Get the data of patients with schizophrenia 
 d1 <- d %>% subset(Diagnosis == 1) 
 
-##VoiceHearing Model
+## VoiceHearing Model
 AltercentricVoiceHearing_f <- bf(
   AltercentricIntrusion ~ 1 + VoiceHearing
 )
 
-##Design the priors
+## Design the priors
 get_prior(AltercentricVoiceHearing_f, family = gaussian, d)
 
 priorVoiceHearing <- c(
@@ -193,7 +194,7 @@ priorVoiceHearing <- c(
   prior(normal(1, 2), class = sigma)
 ) 
 
-##Test the priors
+## Test the priors
 AltercentricVoiceHearing_PriorCheck_m <- brm(
   formula = AltercentricVoiceHearing_f,
   data = d1,
@@ -203,10 +204,10 @@ AltercentricVoiceHearing_PriorCheck_m <- brm(
   file = "AltercentricVoiceHearing_PC"
 )
 
-##Posterior predictive check
+## Posterior predictive check
 pp_check(AltercentricVoiceHearing_PriorCheck_m, nsamples = 100)
 
-##Fitting the model
+## Fitting the model
 AltercentricVoiceHearing_m <- brm(
   formula = AltercentricVoiceHearing_f,
   data = d1,
@@ -216,13 +217,13 @@ AltercentricVoiceHearing_m <- brm(
   file = "AltercentricVoiceHearing"
 )
 
-##Posterior predictive check
+## Posterior predictive check
 pp_check(AltercentricVoiceHearing_m, nsamples = 100)
 
-##Check the model for warnings // ## estan los resultados ## lo mas importante
+## Check the model for warnings // ## estan los resultados ## lo mas importante
 AltercentricVoiceHearing_m
 
-##Hypothesis testing + updating check
+## Hypothesis testing + updating check
 plot(hypothesis(AltercentricVoiceHearing_m,
            "VoiceHearing > 0"))
 
@@ -238,7 +239,7 @@ AltercentricMindReading_f <- bf(
   AltercentricIntrusion ~ 1 + MindReading
 )
 
-##Design the priors
+## Design the priors
 get_prior(AltercentricMindReading_f, family = gaussian, d)
 
 priorMindReading <- c(
@@ -247,7 +248,7 @@ priorMindReading <- c(
   prior(normal(1, 2), class = sigma)
 ) 
 
-##Test the priors
+## Test the priors
 AltercentricMindReading_PriorCheck_m <- brm(
   formula = AltercentricMindReading_f,
   data = d1,
@@ -259,7 +260,7 @@ AltercentricMindReading_PriorCheck_m <- brm(
 
 pp_check(AltercentricMindReading_PriorCheck_m, nsamples = 100)
 
-##Fitting the model
+## Fitting the model
 AltercentricMindReading_m <- brm(
   formula = AltercentricMindReading_f,
   data = d1,
@@ -269,13 +270,13 @@ AltercentricMindReading_m <- brm(
   file = "AltercentricMindReading"
 )
 
-##Posterior predictive check
+## Posterior predictive check
 pp_check(AltercentricMindReading_m, nsamples = 100)
 
-##Check the model for warnings
+## Check the model for warnings
 AltercentricMindReading_m
 
-##Hypothesis testing + updating check
+## Hypothesis testing + updating check
 plot(hypothesis(AltercentricMindReading_m,
            "MindReading > 0"))
 
@@ -286,12 +287,12 @@ conditional_effects(AltercentricMindReading_m)
 
 plot(conditional_effects(AltercentricMindReading_m), points=T)
 
-##Apathy Model
+## Apathy Model
 AltercentricApathy_f <- bf(
   AltercentricIntrusion ~ 1 + Apathy
 )
 
-##Design the priors
+## Design the priors
 get_prior(AltercentricApathy_f, family = gaussian, d)
 
 priorApathy <- c(
@@ -300,7 +301,7 @@ priorApathy <- c(
   prior(normal(1, 2), class = sigma)
 ) 
 
-##Test the priors
+## Test the priors
 AltercentricApathy_PriorCheck_m <- brm(
   formula = AltercentricApathy_f,
   data = d1,
@@ -310,10 +311,10 @@ AltercentricApathy_PriorCheck_m <- brm(
   file = "AltercentricApathy_PC"
 )
 
-##Posterior predictive check
+## Posterior predictive check
 pp_check(AltercentricApathy_PriorCheck_m, nsamples = 100)
 
-##Fitting the model
+## Fitting the model
 AltercentricApathy_m <- brm(
   formula = AltercentricApathy_f,
   data = d1,
@@ -323,13 +324,13 @@ AltercentricApathy_m <- brm(
   file = "AltercentricApathy"
 )
 
-##Posterior predictive check
+## Posterior predictive check
 pp_check(AltercentricApathy_m, nsamples = 100)
 
-##Check the model for warnings
+## Check the model for warnings
 AltercentricApathy_m
 
-##Hypothesis testing + updating check
+## Hypothesis testing + updating check
 plot(hypothesis(AltercentricApathy_m,
            "Apathy > 0"))
 
@@ -344,12 +345,12 @@ plot(conditional_effects(AltercentricApathy_m), points=T)
 # MR 0.07, ER = 3.2 (BARELY CREDIBLE) 0.1, ER 4.46
 # A -0.19, ER = 14.5 (CREDIBLE)
 
-##MINDREADING + VOICE HEARING
+## MINDREADING + VOICE HEARING
 AltercentricMRVH_f <- bf(
   AltercentricIntrusion ~ 1 + MindReading + VoiceHearing
 )
 
-##Design the priors
+## Design the priors
 get_prior(AltercentricMRVH_f, family = gaussian, d)
 
 priorMRVH <- c(
@@ -358,7 +359,7 @@ priorMRVH <- c(
   prior(normal(1, 2), class = sigma)
 ) 
 
-##Test the priors
+## Test the priors
 AltercentricMRVH_PriorCheck_m <- brm(
   formula = AltercentricMRVH_f,
   data = d1,
@@ -368,10 +369,10 @@ AltercentricMRVH_PriorCheck_m <- brm(
   file = "AltercentricMRVH_PC"
 )
 
-##Posterior predictive check
+## Posterior predictive check
 pp_check(AltercentricMRVH_PriorCheck_m, nsamples = 100)
 
-##Fitting the model
+## Fitting the model
 AltercentricMRVH_m <- brm(
   formula = AltercentricMRVH_f,
   data = d1,
@@ -381,13 +382,13 @@ AltercentricMRVH_m <- brm(
   file = "AltercentricMRVH"
 )
 
-##Posterior predictive check
+## Posterior predictive check
 pp_check(AltercentricMRVH_m, nsamples = 100)
 
-##Check the model for warnings
+## Check the model for warnings
 AltercentricMRVH_m
 
-##Hypothesis testing + updating check
+## Hypothesis testing + updating check
 plot(hypothesis(AltercentricMRVH_m,
            "VoiceHearing > 0"))
 hypothesis(AltercentricMRVH_m,
@@ -402,12 +403,12 @@ conditional_effects(AltercentricMRVH_m)
 
 plot(conditional_effects(AltercentricMRVH_m), points=T)
 
-##MINDREADING + VOICE HEARING + APATHY
+## MINDREADING + VOICE HEARING + APATHY
 AltercentricMRVHA_f <- bf(
   AltercentricIntrusion ~ 1 + MindReading + VoiceHearing + Apathy
 )
 
-##Design the priors
+## Design the priors
 get_prior(AltercentricMRVHA_f, family = gaussian, d)
 
 priorMRVHA <- c(
@@ -416,7 +417,7 @@ priorMRVHA <- c(
   prior(normal(1, 2), class = sigma)
 ) 
 
-##Test the priors
+## Test the priors
 AltercentricMRVHA_PriorCheck_m <- brm(
   formula = AltercentricMRVHA_f,
   data = d1,
@@ -428,7 +429,7 @@ AltercentricMRVHA_PriorCheck_m <- brm(
 
 pp_check(AltercentricMRVHA_PriorCheck_m, nsamples = 100)
 
-##Fitting the model
+## Fitting the model
 AltercentricMRVHA_m <- brm(
   formula = AltercentricMRVHA_f,
   data = d1,
@@ -438,13 +439,13 @@ AltercentricMRVHA_m <- brm(
   file = "AltercentricMRVHA"
 )
 
-##Posterior predictive check
+## Posterior predictive check
 pp_check(AltercentricMRVHA_m, nsamples = 100)
 
-##Check the model for warnings
+## Check the model for warnings
 AltercentricMRVHA_m
 
-##Hypothesis testing + updating check
+## Hypothesis testing + updating check
 plot(hypothesis(AltercentricMRVHA_m,
            "VoiceHearing > 0"))
 hypothesis(AltercentricMRVHA_m,
@@ -467,7 +468,7 @@ plot(conditional_effects(AltercentricMRVHA_m), points=T)
 
 ## Model comparison
 ```{r}
-##Model comparison
+## Model comparison
 AltercentricVoiceHearing_m <- add_criterion(AltercentricVoiceHearing_m, criterion = "loo")
 AltercentricMindReading_m <- add_criterion(AltercentricMindReading_m, criterion = "loo")
 AltercentricApathy_m <- add_criterion(AltercentricApathy_m, criterion = "loo")
@@ -499,7 +500,26 @@ The results do not support our hypotheses and would require a rethinking of the 
 Q2.1) However, we know that the diagnosis is based on symptom assessment: if the overall sum of symptoms is severe enough, the participant gets a diagnosis. In other words, by selecting the patients, and including the symptoms in the model we might have inadvertently introduced an issue in our inference. Do try to draw a causal graph (Directed Acyclical Graph) of the variables and compare it with the types of causal graphs presented in the slides. Discuss which biases you might have introduced.
 
 ```{r}
+## Required packages
+install.packages("dagitty") ##Installed
+install.packages("ggdag") ##Installed
 
+## Required libraries
+library(dagitty) ## Loaded
+library(ggdag) ## Loaded
+
+dag_mod =      dagitty("dag {
+                 AI <-> VH
+                 AI <-> MR
+                 VH -> D
+                 MR -> D
+                 AP -> D
+                 AI -> D
+                 }")
+
+tidy_dagitty(dag_mod)
+ggdag(dag_mod)
+impliedConditionalIndependencies(dag_mod)
 ```
 
 
@@ -514,26 +534,26 @@ Q3.2) OPTIONAL: is this a general pattern? Try varying the parameters (e.g. corr
 ```{r}
 pacman::p_load(MASS, tidyverse, psych)
 
-seed <- 1981 ##Defining a seed so the results are always the same
-n <- 300 ##Defining the amount of participants
+seed <- 1981 ## Defining a seed so the results are always the same
+n <- 300 ## Defining the amount of participants
 
-SymptomCorr <- .2 ##Defining the correlation of symptoms (as they tend to co-occur)
-EffectCorrRel <- .2 ##Defining the correlation between relevant symptoms and effect (Some symptoms are positively correlated with the effect)
-EffectCorrIrrel <- 0 ##Defining the correlation between irrelevant symptoms and effect (none)
+SymptomCorr <- .2 ## Defining the correlation of symptoms (as they tend to co-occur)
+EffectCorrRel <- .2 ## Defining the correlation between relevant symptoms and effect (Some symptoms are positively correlated with the effect)
+EffectCorrIrrel <- 0 ## Defining the correlation between irrelevant symptoms and effect (none)
 
-##Creating the variance-co variance matrix for the variables we want to generate (3 symptoms, 1 effect)
+## Creating the variance-co variance matrix for the variables we want to generate (3 symptoms, 1 effect)
 Sigma <- matrix(data=c(1,SymptomCorr,SymptomCorr,EffectCorrRel,
                        SymptomCorr,1,SymptomCorr,EffectCorrRel,
                        SymptomCorr,SymptomCorr,1,EffectCorrIrrel,
                        EffectCorrRel,EffectCorrRel,EffectCorrIrrel,1),
                        nrow=4,ncol=4)
 
-##Generate data from a multivariate (mvr) normal (n) distribution
-d <- mvrnorm(n = n, # number of participant
-        mu = c(1.2, 1.2, 1.2, 4), # mean of each variable
-        Sigma) # variance co-variance matrix
+## Generate data from a multivariate (mvr) normal (n) distribution
+d <- mvrnorm(n = n, ## number of participant
+        mu = c(1.2, 1.2, 1.2, 4), ## mean of each variable
+        Sigma) ## variance co-variance matrix
 
-##Giving meaningful names to variables and add ID
+## Giving meaningful names to variables and add ID
 d <- data.frame(
   VoiceHearing = d[,1], 
   MindReading =  d[,2],
@@ -541,21 +561,21 @@ d <- data.frame(
   AltercentricIntrusion = d[,4],
   ID = seq(nrow(d)))
 
-##Assessing whether the participant has schizophrenia (high enough sum of symptoms)
-##Here we choose participants scoring above 75% percentile (the most severe ones)
+## Assessing whether the participant has schizophrenia (high enough sum of symptoms)
+## Here we choose participants scoring above 75% percentile (the most severe ones)
 d$Diagnosis <- 0
 d$Diagnosis[(d$VoiceHearing + d$MindReading + d$Apathy) > 
               quantile(d$VoiceHearing + d$MindReading + d$Apathy, .75)] <- 1
 
-##Plotting the relation between variables all participants
+## Plotting the relation between variables all participants
 pairs.panels(dplyr::select(d,-Diagnosis, -ID))
 
 
-##Plotting the relation between variables in schizophrenia
+## Plotting the relation between variables in schizophrenia
 d1 <- d %>% subset(Diagnosis==1) %>% dplyr::select(-Diagnosis, -ID)
 pairs.panels(d1)
 
-
-write_csv(d, "data/Ass3.csv")
+write_csv(d, '/Users/estebandavidmaidana/Desktop/working_directory/Ass3.csv')
 ```
+
 
