@@ -39,10 +39,10 @@ The dataset (here: https://www.dropbox.com/s/1ehgvlcvtsf5q46/ImiInhiData.csv?dl=
 
 ```{r}
 ## Required packages
-## install.packages("bayesplot") ##Installed
-## install.packages("rstan") ##Installed
-## install.packages("shinystan") ##Installed
-## install.packages("rstanarm") ##Installed
+## install.packages("bayesplot") ## Installed
+## install.packages("rstan") ## Installed
+## install.packages("shinystan") ## Installed
+## install.packages("rstanarm") ## Installed
 
 ## Required libraries
 library(tidyverse) ## Loaded
@@ -235,23 +235,23 @@ summary(incong_fit)
 Posterior predictive checks are shown below, and an Rhat of < 1.01 for each model (from summary(model)) suggests that our Markov Chain Monte Carlos converged successfully.
 
 ```{r}
-## First the posterior predictive check for the incongruent model
-# pp_data <- posterior_predict(incong_fit, nsamples = 100)
-# 
-# color_scheme_set("gray" )
-# pdense2 <- ppc_dens_overlay(y = incong.params$theta,
-#                            yrep = pp_data) +
-#   labs(x = "Probability", title = "Posterior PC") +
-#   theme(title = element_text(size=10))
-# 
-# ## Now the posterior predictive check for the congruent model
-# pp_data <- posterior_predict(congruent_fit, nsamples = 100)
-# 
-# color_scheme_set("gray" )
-# pdense2 <- ppc_dens_overlay(y = con.params$theta,
-#                            yrep = pp_data) +
-#   labs(x = "Probability", title = "Posterior PC") +
-#   theme(title = element_text(size=10))
+# First the posterior predictive check for the incongruent model
+pp_data <- posterior_predict(incong_fit, nsamples = 100)
+
+color_scheme_set("gray" )
+pdense2 <- ppc_dens_overlay(y = incong.params$theta,
+                           yrep = pp_data) +
+  labs(x = "Probability", title = "Posterior PC") +
+  theme(title = element_text(size=10))
+
+## Now the posterior predictive check for the congruent model
+pp_data <- posterior_predict(congruent_fit, nsamples = 100)
+
+color_scheme_set("gray" )
+pdense2 <- ppc_dens_overlay(y = con.params$theta,
+                           yrep = pp_data) +
+  labs(x = "Probability", title = "Posterior PC") +
+  theme(title = element_text(size=10))
 ```
 
     - hypothesis testing procedure (Note there is no one procedure that is better than others, so just choose what you think is more appropriate e.g. model comparison? credibility intervals? predictive error? etc.).
