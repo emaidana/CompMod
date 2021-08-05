@@ -9,13 +9,13 @@ output:
 ---  
 ```{r setup, include=FALSE}
 
-##Required Packages 
-##install.packages("rethinking") ##Installed
-##install.packages("slider") ##Installed
+## Required Packages 
+## install.packages("rethinking") ## Installed
+## install.packages("slider") ## Installed
 
-##Required libraries
-library(rethinking) ##Loaded
-library(tidyverse) ##Loaded
+## Required libraries
+library(rethinking) ## Loaded
+library(tidyverse) ## Loaded
 ```
 ## In this assignment we learn how to assess rates from a binomial distribution, using the case of assessing your teachers' knowledge of CogSci
 
@@ -43,41 +43,41 @@ Questions:
 - Then implement a quadratic approximation (hint check paragraph 2.4.2!).
 - N.B. for the rest of the exercise just keep using the grid approximation (we'll move to quadratic approximations in two classes)
 ```{r}
-##Define grid
+## Define grid
 p_grid <- seq(from=0, to=1, length.out=1000)
 
-##Define prior
+## Define prior
 prior <- rep(1,1000) ##uniform prior
 
-##Compute likelihood at each value in grid
+## Compute likelihood at each value in grid
 likelihood <- dbinom(3 , size=6 , prob=p_grid)
 
-##Compute product of likelihood and prior
+## Compute product of likelihood and prior
 unstd.posterior <- likelihood * prior
 
-##Standardize the posterior, so it sums to 1
+## Standardize the posterior, so it sums to 1
 posterior <- unstd.posterior / sum(unstd.posterior)
 
-##Plot
+## Plot
 plot( p_grid , posterior , type="b" ,
     xlab="Estimated Knowledge of CogSci" , ylab="Posterior probability" , main = "Riccardo")
 HPDI(posterior)
 
-##Quadratic approximation
+## Quadratic approximation
 globe.qa <- map(
   alist(
      w ~ dbinom(6, p),  ##Binomial likelihood
      p ~ dunif(0, 1)    ##Uniform prior
   ), data=list(w=3))
 
-##Display summary of quadratic approximation
+## Display summary of quadratic approximation
 precis(globe.qa)
 ```
 2. Estimate all the teachers' knowledge of CogSci. Who's best? Use grid approximation. Comment on the posteriors of Riccardo and Mikkel.
 
 2a. Produce plots of the prior, and posterior for each teacher.
 ```{r}
-##Kristian
+## Kristian
 p_grid <- seq(from=0, to=1, length.out=1000)
 prior <- rep(1,1000)
 likelihood_k <- dbinom(2, size=2, prob=p_grid)
@@ -87,7 +87,7 @@ posterior_k <- unstd.posterior_k / sum(unstd.posterior_k)
 plot_k <- plot(p_grid, posterior_k, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Kristian")
 
-##Josh
+## Josh
 p_grid <- seq(from=0, to=1, length.out=1000)
 prior <- rep(1,1000)
 likelihood_j <- dbinom(160, size=198, prob=p_grid)
@@ -97,7 +97,7 @@ posterior_j <- unstd.posterior_j / sum(unstd.posterior_j)
 plot_j <- plot(p_grid, posterior_j, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Josh")
 
-##Mikkel
+## Mikkel
 p_grid <- seq(from=0, to=1, length.out=1000)
 prior <- rep(1,1000)
 likelihood_m <- dbinom(66, size=132, prob=p_grid)
@@ -107,7 +107,7 @@ posterior_m <- unstd.posterior_m / sum(unstd.posterior_m)
 plot_m <- plot(p_grid, posterior_m, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Mikkel")
 
-##Ricardo
+## Ricardo
 p_grid <- seq(from=0, to=1, length.out=1000)
 prior <- rep(1,1000)
 likelihood_r <- dbinom(3, size=6, prob=p_grid)
@@ -122,7 +122,7 @@ plot_r <- plot(p_grid, posterior_m, type="b",
 
 3a. Produce plots of the prior and posterior for each teacher.
 ```{r}
-##Kristian
+## Kristian
 p_grid <- seq(from=0, to=1, length.out=1000)
 new_prior <- dnorm(p_grid, mean=0.8, sd=0.2)
 likelihood_k <- dbinom(2, size=2, prob=p_grid)
@@ -132,7 +132,7 @@ posterior_k <- unstd.posterior_k / sum(unstd.posterior_k)
 plot_k_np <- plot(p_grid, posterior_k, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Kristian")
 
-##Josh
+## Josh
 p_grid <- seq(from=0, to=1, length.out=1000)
 new_prior <- dnorm(p_grid, mean=0.8, sd=0.2)
 likelihood_j <- dbinom(160, size=198, prob=p_grid)
@@ -142,7 +142,7 @@ posterior_j <- unstd.posterior_j / sum(unstd.posterior_j)
 plot_j_np <- plot(p_grid, posterior_j, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Josh")
 
-##Mikkel
+## Mikkel
 p_grid <- seq(from=0, to=1, length.out=1000)
 new_prior <- dnorm(p_grid, mean=0.8, sd=0.2)
 likelihood_m <- dbinom(66, size=132, prob=p_grid)
@@ -152,7 +152,7 @@ posterior_m <- unstd.posterior_m / sum(unstd.posterior_m)
 plot_m_np <- plot(p_grid, posterior_m, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Mikkel")
 
-##Ricardo
+## Ricardo
 p_grid <- seq(from=0, to=1, length.out=1000)
 new_prior <- dnorm(p_grid, mean=0.8, sd=0.2)
 likelihood_r <- dbinom(3, size=6, prob=p_grid)
@@ -166,18 +166,18 @@ plot_r_np <- plot(p_grid, posterior_m, type="b",
 
 4. You go back to your teachers and collect more data (multiply the previous numbers by 100). Calculate their knowledge with both a uniform prior and a normal prior with a mean of 0.8 and a standard deviation of 0.2. Do you still see a difference between the results? Why?
 ```{r}
-##Create data frame
+## Create data frame
 mult_df <- data.frame(
   Correct=c(300,200,16000,6600),
   Questions=c(600,200,19800,13200),
   Teacher=c("RF","KT","JS","MW"))
 
-##Define uniform prior and normal prior
+## Define uniform prior and normal prior
 prior <- rep(1,100)
 new_prior <- dnorm(p_grid, mean=0.8, sd=0.2)
 
-##UNIFORM PRIOR
-##Ricardo 
+## UNIFORM PRIOR
+## Ricardo 
 p_grid <- seq(from=0, to=1, length.out=1000)
 prior <- rep(1,100)
 likelihood_r <- dbinom(mult_df[1,1], size = mult_df[1,2], prob = p_grid)
@@ -187,7 +187,7 @@ posterior_r <- unstd.posterior_r / sum(unstd.posterior_r)
 plot_r <- plot(p_grid, posterior_m, type="b", 
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Ricardo")
 
-##Kristian
+## Kristian
 p_grid <- seq(from=0, to=1, length.out=1000)
 prior <- rep(1,100)
 likelihood_k <- dbinom(mult_df[2,1], size = mult_df[2,2], prob = p_grid)
@@ -197,7 +197,7 @@ posterior_k <- unstd.posterior_k / sum(unstd.posterior_k)
 plot_k_np <- plot(p_grid, posterior_k, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Kristian")
 
-##Josh
+## Josh
 p_grid <- seq(from=0, to=1, length.out=1000)
 prior <- rep(1,100)
 likelihood_j <- dbinom(mult_df[3,1], size = mult_df[3,2], prob = p_grid)
@@ -207,7 +207,7 @@ posterior_j <- unstd.posterior_j / sum(unstd.posterior_j)
 plot_j_np <- plot(p_grid, posterior_j, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Josh")
 
-##Mikkel
+## Mikkel
 p_grid <- seq(from=0, to=1, length.out=1000)
 prior <- rep(1,100)
 likelihood_m <- dbinom(mult_df[4,1], size = mult_df[4,2], prob = p_grid)
@@ -217,8 +217,8 @@ posterior_m <- unstd.posterior_m / sum(unstd.posterior_m)
 plot_m <- plot(p_grid, posterior_m, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Mikkel")
 
-##NORMAL PRIOR 
-##Ricardo 
+## NORMAL PRIOR 
+## Ricardo 
 p_grid <- seq(from=0, to=1, length.out=1000)
 new_prior <- dnorm(p_grid, mean=0.8, sd=0.2)
 likelihood_r <- dbinom(mult_df[1,1], size = mult_df[1,2], prob = p_grid)
@@ -228,7 +228,7 @@ posterior_r <- unstd.posterior_r / sum(unstd.posterior_r)
 plot_r <- plot(p_grid, posterior_m, type="b", 
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Ricardo")
 
-##Kristian
+## Kristian
 p_grid <- seq(from=0, to=1, length.out=1000)
 new_prior <- dnorm(p_grid, mean=0.8, sd=0.2)
 likelihood_k <- dbinom(mult_df[2,1], size = mult_df[2,2], prob = p_grid)
@@ -238,7 +238,7 @@ posterior_k <- unstd.posterior_k / sum(unstd.posterior_k)
 plot_k_np <- plot(p_grid, posterior_k, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Kristian")
 
-##Josh
+## Josh
 p_grid <- seq(from=0, to=1, length.out=1000)
 new_prior <- dnorm(p_grid, mean=0.8, sd=0.2)
 likelihood_j <- dbinom(mult_df[3,1], size = mult_df[3,2], prob = p_grid)
@@ -248,7 +248,7 @@ posterior_j <- unstd.posterior_j / sum(unstd.posterior_j)
 plot_j_np <- plot(p_grid, posterior_j, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Josh")
 
-##Mikkel
+## Mikkel
 p_grid <- seq(from=0, to=1, length.out=1000)
 new_prior <- dnorm(p_grid, mean=0.8, sd=0.2)
 likelihood_m <- dbinom(mult_df[4,1], size = mult_df[4,2], prob = p_grid)
@@ -261,11 +261,11 @@ plot_m <- plot(p_grid, posterior_m, type="b",
 
 5. Imagine you're a skeptic and think your teachers do not know anything about CogSci, given the content of their classes. How would you operationalize that belief?
 ```{r}
-##Define skeptic prior
+## Define skeptic prior
 skept_prior <- dnorm(p_grid, mean=0.5, sd=0.1)
 
-##SKEPTIC PRIOR
-##Kristian
+## SKEPTIC PRIOR
+## Kristian
 p_grid <- seq(from=0, to=1, length.out=1000)
 skept_prior <- dnorm(p_grid, mean=0.5, sd=0.1)
 likelihood_k <- dbinom(2, size=2, prob=p_grid)
@@ -275,7 +275,7 @@ posterior_k <- unstd.posterior_k / sum(unstd.posterior_k)
 plot_k <- plot(p_grid, posterior_k, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Kristian")
 
-##Josh
+## Josh
 p_grid <- seq(from=0, to=1, length.out=1000)
 skept_prior <- dnorm(p_grid, mean=0.5, sd=0.1)
 likelihood_j <- dbinom(160, size=198, prob=p_grid)
@@ -285,7 +285,7 @@ posterior_j <- unstd.posterior_j / sum(unstd.posterior_j)
 plot_j <- plot(p_grid, posterior_j, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Josh")
 
-##Mikkel
+## Mikkel
 p_grid <- seq(from=0, to=1, length.out=1000)
 skept_prior <- dnorm(p_grid, mean=0.5, sd=0.1)
 likelihood_m <- dbinom(66, size=132, prob=p_grid)
@@ -295,7 +295,7 @@ posterior_m <- unstd.posterior_m / sum(unstd.posterior_m)
 plot_m <- plot(p_grid, posterior_m, type="b",
                xlab="Estimated knowledge of CogSci", ylab="Posterior probability", main="Mikkel")
 
-##Ricardo
+## Ricardo
 p_grid <- seq(from=0, to=1, length.out=1000)
 skept_prior <- dnorm(p_grid, mean=0.5, sd=0.1)
 likelihood_r <- dbinom(3, size=6, prob=p_grid)
